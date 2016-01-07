@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>React Tutorial</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react-dom.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/0.3.2/marked.min.js"></script>
+  </head>
+  <body>
+    <div id="content"></div>
+    <script type="text/babel">
+      var People = React.createClass({
+        getInitialState: function() {
+          return {
+            people: []
+          };
+        },
+        getPeople: function() {
+          var url = 'http://localhost:3000/people';
+
+          $.ajax({
+            /*headers: {
+              'AppToken': '535deb74-1bed-4428-b046-243e7edc5b00',
+              'UserToken': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJzaG9wcGVySWQiOjE4NX0.Z9iL9BOyrAnu8vTHkdRltrmsLLjQBjq25EydQO5ULzxOeQZXudAGFQsgcAlkaMnnUYftdaZiHcisOhvBzr_3oQ'
+            },*/
+            contentType: 'application/json',
+            method: 'GET',
+            url: url,
+            success: function(data) {
+              if(this.isMounted()) {
+                for(var i = 0; i < data.length; i++) {
+                  var person = data[i];
+                  this.state.people.push(
+                    <PersonRow key={i} person={person} />
+                  );
+                }
+                this.forceUpdate();
+              }
+            }.bind(this),
+            error: function(xhr, status, err) {
+              console.log('error', err);
+            }.bind(this)
+          });
+        },
+        componentDidMount: function() {
+          this.getPeople();
+        },
+        render: function() {
+          return (
+            <div>
+              <table>
+                <thead>
+                  <tr>
+                    <td>First Name</td>
+                    <td>Last Name</td>
+                    <td>Email</td>
+                    <td>Id</td>
+                  </tr>
+                </thead>
+                <tbody>
+                  {this.state.people}
+                </tbody>
+              </table>
+            </div>
+          );
+        }
+      });
+
+      var PersonRow = React.createClass({
+        render: function() {
+          return (
+            <tr>
+              <td>{this.props.person.firstName}</td>
+              <td>{this.props.person.lastName}</td>
+              <td>{this.props.person.email}</td>
+              <td>{this.props.person._id}</td>
+            </tr>
+          );
+        }
+      });
+
+      ReactDOM.render(
+        <People />,
+        document.getElementById('content')
+      );
+    </script>
+  </body>
+</html>

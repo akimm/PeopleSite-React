@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>React Tutorial</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react-dom.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/0.3.2/marked.min.js"></script>
+  </head>
+  <body>
+    <div id="content"></div>
+    <script type="text/babel">
+      var Account = React.createClass({
+        getInitialState: function() {
+          return {
+            regionId: undefined,
+            businesses: []
+          };
+        },
+        setRegion: function(regionId)
+        {
+          this.state.regionId = regionId;
+          this.state.businesses = [];
+          this.getBlendCardAccount();
+        },
+        getBlendCardAccount: function() {
+          var url = 'Shoppers/185/BankList';
+          if(this.state.regionId) {
+            url += '?RegionId=' + this.state.regionId;
+          }
+          $.ajax({
+            headers: {
+              'AppToken': '',
+              'UserToken': ''
+            },
+            contentType: 'application/json',
+            method: 'GET',
+            url: url,
+            success: function(data) {
+              if(this.isMounted()) {
+                for(var i = 0; i < data.length; i++) {
+                  var business = data[i];
+                  this.state.businesses.push(
+                    <AccountRow key={i} business={business} />
+                  );
+                }
+                this.forceUpdate();
+              }
+            }.bind(this),
+            error: function(xhr, status, err) {
+              console.log('error', err);
+            }.bind(this)
+          });
+        },
+        componentDidMount: function() {
+          this.getBlendCardAccount();
+        },
+        render: function() {
+          return (
+            <div>
+              <RegionFilter onRegionChange={this.setRegion} />
+              <table>
+                <thead>
+                  <tr>
+                    <td>Business</td>
+                    <td>Coupon</td>
+                    <td>Loyalty</td>
+                    <td>Gift Cards</td>
+                  </tr>
+                </thead>
+                <tbody>
+                  {this.state.businesses}
+                </tbody>
+              </table>
+            </div>
+          );
+        }
+      });
+      var RegionFilter = React.createClass({
+        getInitialState: function() {
+          return { regions: [] };
+        },
+        handleChange: function() {
+          this.props.onRegionChange(this.refs.regionDropDown.value);
+        },
+        componentDidMount: function() {
+          $.ajax({
+            headers: { 'AppToken': '' },
+            contentType: 'application/json',
+            method: 'GET',
+            url: 'Regions',
+            success: function(data) {
+              if(this.isMounted()) {
+                for(var i = 0; i < data.length; i++) {
+                  var region = data[i];
+                  this.state.regions.push(
+                    <option key={i} value={region.RegionId}>{region.RegionName}</option>
+                  );
+                }
+                this.forceUpdate();
+              }
+            }.bind(this),
+            error: function(xhr, status, err) {
+              console.log('error', err);
+            }.bind(this)
+          });
+        },
+        render: function() {
+          return (
+            <div>
+              <select ref="regionDropDown" onChange={this.handleChange}>
+                {this.state.regions}
+              </select>
+            </div>
+          );
+        }
+      });
+      var AccountRow = React.createClass({
+        render: function() {
+          return (
+            <tr>
+              <td><BusinessFlyout businessName={this.props.business.BusinessName} /></td>
+              <td><CouponFlyout business={this.props.business} /></td>
+              <td><LoyaltyFlyout currentSwipeCount={this.props.business.Swipes} targetSwipeCount={this.props.business.SwipeDealMaxSwipes}/></td>
+              <td><GiftCardFlyout giftCardAmount={this.props.business.BalanceAmount} /></td>
+            </tr>
+          );
+        }
+      });
+      var BusinessFlyout = React.createClass({
+        render: function() {
+          return (
+            <div>{this.props.businessName}</div>
+          );
+        }
+      });
+
+      var CouponFlyout = React.createClass({
+        render: function() {
+          var couponDisplay = '';
+          if(this.props.business.CouponTypeId == 1) {
+            couponDisplay = this.props.business.CouponPercentOff + "%";
+          }
+          else if(this.props.business.CouponTypeId == 2) {
+            couponDisplay = this.props.business.CouponItem;
+          }
+          else if(this.props.business.CouponTypeId == 4) {
+            couponDisplay = '$' + this.props.business.CouponAmount + " off";
+          }
+          return (
+            <div>{couponDisplay}</div>
+          );
+        }
+      });
+
+      var LoyaltyFlyout = React.createClass({
+        render: function() {
+          return (
+            <div>{this.props.currentSwipeCount}/{this.props.targetSwipeCount}</div>
+          );
+        }
+      });
+
+      var GiftCardFlyout = React.createClass({
+        render: function() {
+          return (
+            <div>{this.props.giftCardAmount}</div>
+          );
+        }
+      });
+
+      ReactDOM.render(
+        <Account />,
+        document.getElementById('content')
+      );
+    </script>
+  </body>
+</html>
